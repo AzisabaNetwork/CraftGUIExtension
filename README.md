@@ -75,5 +75,5 @@ Lores:
 
 - `/craftgui reload`：config.ymlを再読込します
 
-## ライセンス / License
+## ライセンス
 [GNU General Public License v3.0](LICENSE)
