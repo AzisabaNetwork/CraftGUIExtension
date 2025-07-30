@@ -6,7 +6,7 @@
 変換するアイテムと変換に必要なアイテムをConfigから設定できます
 
 ## 動作環境
-NMSを使用しているため、Minecraft Ver 1.15.2のみ使用可能です
+NMSを使用しているため，Minecraft Ver 1.15.2のみ使用可能です
 
 ## Configの設定
 ```yaml
@@ -70,6 +70,8 @@ Lores:
 - `/craftgui`：CraftGUI Extensionを開きます
 
 - `/craftgui register`：アイテム登録GUIを開きます
+
+  ※登録しても表示されないバグがあります(修正予定)
 
 - `/craftgui reload`：config.ymlを再読込します
 
