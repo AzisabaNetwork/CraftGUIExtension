@@ -53,7 +53,7 @@ public final class CraftGUIExtension extends JavaPlugin {
         this.configUtil = new ConfigUtil(this);
 
         String currentVersion = getConfig().getString("configVersion", "0.0");
-        String CONFIG_VERSION = "1.3";
+        String CONFIG_VERSION = "1.4";
         if (!currentVersion.equals(CONFIG_VERSION)) {
             configUtil.updateConfig();
         } else {
