@@ -41,6 +41,7 @@ public class CraftGuiCommand implements CommandExecutor, TabCompleter {
             } else {
                 sender.sendMessage(ChatColor.RED + "このコマンドはプレイヤーのみ実行できます");
             }
+            return true;
         }
 
         if (args.length == 1 && args[0].equalsIgnoreCase("register")) {
