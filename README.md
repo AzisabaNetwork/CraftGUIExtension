@@ -11,7 +11,10 @@ NMSを使用しているため，Minecraft Ver 1.15.2のみ使用可能です
 ## Configの設定
 ```yaml
 # CraftGUI Extension Configuration
-configVersion: 1.3
+configVersion: 1.4
+
+# 外部ファイルを参照したリロード時の参照先URL
+ConfigURL: "url here"
 
 # GUIに表示するアイテムの設定
 Items:
@@ -61,6 +64,7 @@ Items:
 
 # Loreの設定
 Lores:
+  # Loreの設定名
   CommonLore:
     - '&f左クリックで1回変換します'
     - '&f右クリックで上限まで変換します'
@@ -73,7 +77,9 @@ Lores:
 
   ※登録しても表示されないバグがあります(修正予定)
 
-- `/craftgui reload`：config.ymlを再読込します
+- `/craftgui config reload`：config.ymlを再読込します
+
+- `/craftgui config reload --external`：外部リンクを参照して，configファイルを更新します（複数鯖導入時など更新が面倒なとき用）
 
 ## ライセンス
 [GNU General Public License v3.0](LICENSE)
