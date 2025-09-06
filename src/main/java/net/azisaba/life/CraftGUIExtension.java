@@ -127,4 +127,11 @@ public final class CraftGUIExtension extends JavaPlugin {
         loadPluginData();
         this.getLogger().info(ChatColor.GREEN +  "CraftGUI Extensionのconfig.ymlの再読み込みが完了しました");
     }
+
+    public void reloadPluginConfigFromUrl(String url) {
+        this.getLogger().info("CraftGUI Extensionのconfig.ymlを外部URLから再読み込みしています...");
+        configUtil.updateConfigFromUrl(url);
+        reloadPluginConfig();
+        this.getLogger().info(ChatColor.GREEN + "CraftGUI Extensionのconfig.ymlの外部URLからの再読み込みが完了しました");
+    }
 }

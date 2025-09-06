@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 
 import java.io.*;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,6 +23,20 @@ public class ConfigUtil {
 
     public ConfigUtil(CraftGUIExtension plugin) {
         this.plugin = plugin;
+    }
+
+    public void updateConfigFromUrl(String urlString) {
+        try {
+            URL url = new URL(urlString);
+            try (InputStream in = url.openStream()) {
+                File configFile = new File(plugin.getDataFolder(), "config.yml");
+                Files.copy(in, configFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                plugin.getLogger().info("config.ymlを" + urlString + "からダウンロードしました．");
+            }
+        } catch (IOException e) {
+            plugin.getLogger().severe("URLからのconfig.ymlのダウンロードに失敗しました: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     public void updateConfig() {

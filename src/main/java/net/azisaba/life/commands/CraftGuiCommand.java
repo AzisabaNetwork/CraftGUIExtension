@@ -32,52 +32,81 @@ public class CraftGuiCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String CommandLabel, String[] args) {
-        if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
-            if (!sender.hasPermission("craftguiextension.reload")) {
-                sender.sendMessage(ChatColor.RED + "権限がありません");
-                return true;
-            }
-            plugin.reloadPluginConfig();
-            sender.sendMessage(ChatColor.GREEN + "CraftGUI ExtensionのConfigを再読み込みしました");
-            return true;
-        }
-
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
-            if (args.length == 0) {
+        if (args.length == 0) {
+            if (sender instanceof Player) {
+                Player player = (Player) sender;
                 guiManager.openCraftGUI(player, 1);
                 mapUtil.setPlayerPage(player.getUniqueId(), 1);
                 player.sendMessage(ChatColor.DARK_GREEN + "CraftGUI Extensionを開きました");
-                return true;
-            }
-            if (args.length == 1) {
-                if (args[0].equalsIgnoreCase("register")) {
-                    if (player.hasPermission("craftguiextension.register")) {
-                        editorManager.start(player);
-                    } else {
-                        player.sendMessage(ChatColor.RED + "権限がありません");
-                    }
-                    return true;
-                } else {
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&',"/craftgui"));
-                }
-                return true;
+            } else {
+                sender.sendMessage(ChatColor.RED + "このコマンドはプレイヤーのみ実行できます");
             }
         }
+
+        if (args.length == 1 && args[0].equalsIgnoreCase("register")) {
+            if (sender instanceof Player) {
+                Player player = (Player) sender;
+                if (player.hasPermission("craftguiextension.register")) {
+                    editorManager.start(player);
+                } else {
+                    player.sendMessage(ChatColor.RED + "権限がありません");
+                }
+            } else {
+                sender.sendMessage("このコマンドはプレイヤーのみ実行できます。");
+            }
+            return true;
+        }
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("config")) {
+            if (args.length > 1 && args[1].equalsIgnoreCase("reload")) {
+                if (args.length == 2) {
+                    if (!sender.hasPermission("craftguiextension.reload")) {
+                        sender.sendMessage(ChatColor.RED + "権限がありません");
+                        return true;
+                    }
+                    plugin.reloadPluginConfig();
+                    sender.sendMessage(ChatColor.GREEN + "CraftGUI ExtensionのConfigを再読み込みしました");
+                    return true;
+                }
+                else if (args.length == 3 && args[2].equalsIgnoreCase("--external")) {
+                    if (!sender.hasPermission("craftguiextension.reload.external")) {
+                        sender.sendMessage(ChatColor.RED + "権限がありません");
+                        return true;
+                    }
+                    String url = "https://gist.githubusercontent.com/albardoo02/3e1721d0f792d4de35b0652e81a26df9/raw/config.yml";
+                    plugin.reloadPluginConfigFromUrl(url);
+                    sender.sendMessage(ChatColor.GREEN + "CraftGUI ExtensionのConfigを外部URLから再読み込みしました");
+                    return true;
+                }
+            }
+        }
+        sender.sendMessage(ChatColor.RED + args[0] + "は不明なコマンドです");
         return true;
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        List<String> completions = new ArrayList<>();
         if (args.length == 1) {
-            List<String> completions = new ArrayList<>();
-            if (sender.hasPermission("craftguiextension.reload")) {
-                completions.add("reload");
+            if (sender.hasPermission("craftguiextension.reload") || sender.hasPermission("craftguiextension.reload.external")) {
+                completions.add("config");
             }
             if (sender.hasPermission("craftguiextension.register")) {
                 completions.add("register");
             }
             return StringUtil.copyPartialMatches(args[0], completions, new ArrayList<>());
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("config")) {
+            if (sender.hasPermission("craftguiextension.reload") || sender.hasPermission("craftguiextension.reload.external")) {
+                completions.add("reload");
+            }
+            return StringUtil.copyPartialMatches(args[1], completions, new ArrayList<>());
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("config") && args[1].equalsIgnoreCase("reload")) {
+            if (sender.hasPermission("craftguiextension.reload.external")) {
+                completions.add("--external");
+            }
+            return StringUtil.copyPartialMatches(args[2], completions, new ArrayList<>());
         }
         return Collections.emptyList();
     }
