@@ -1,5 +1,8 @@
 # CraftGUI Extension Configuration
-configVersion: 1.3
+configVersion: 1.4
+
+# 外部ファイルを参照したリロード時の参照先URL
+ConfigURL: "url here"
 
 # GUIに表示するアイテムの設定
 Items:

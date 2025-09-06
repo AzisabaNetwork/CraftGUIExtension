@@ -73,7 +73,7 @@ public class CraftGuiCommand implements CommandExecutor, TabCompleter {
                         sender.sendMessage(ChatColor.RED + "権限がありません");
                         return true;
                     }
-                    String url = "https://gist.githubusercontent.com/albardoo02/3e1721d0f792d4de35b0652e81a26df9/raw/config.yml";
+                    String url = plugin.getConfig().getString("ConfigURL");
                     plugin.reloadPluginConfigFromUrl(url);
                     sender.sendMessage(ChatColor.GREEN + "CraftGUI ExtensionのConfigを外部URLから再読み込みしました");
                     return true;
