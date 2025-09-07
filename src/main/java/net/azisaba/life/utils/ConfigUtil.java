@@ -2,6 +2,7 @@ package net.azisaba.life.utils;
 
 import net.azisaba.life.CraftGUIExtension;
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 
@@ -91,11 +92,12 @@ public class ConfigUtil {
                     String loreKey = itemSection.getString("lore", "CommonLore");
                     boolean enchanted = itemSection.getBoolean("enchanted");
                     int model = itemSection.getInt("model");
+                    Color color = parseColor(itemSection.getString("color"));
 
                     List<RequiredOrResultItem> resultItems = parseRequiredOrResultItemsList(itemSection.getList("resultItems"), "resultItems", pageKey, slotKey);
                     List<RequiredOrResultItem> requiredItems = parseRequiredOrResultItemsList(itemSection.getList("requiredItems"), "requiredItems", pageKey, slotKey);
 
-                    ItemUtil customItem = new ItemUtil(enabled, material, displayName, loreKey, enchanted, model, resultItems, requiredItems);
+                    ItemUtil customItem = new ItemUtil(enabled, material, displayName, loreKey, enchanted, model, color, resultItems, requiredItems);
                     pageItems.put(Integer.parseInt(slotKey), customItem);
 
                 } catch (IllegalArgumentException e) {
@@ -184,6 +186,27 @@ public class ConfigUtil {
         return items;
     }
 
+    private Color parseColor(String hex) {
+        if (hex == null || hex.isEmpty()) {
+            return null;
+        }
+        if (hex.startsWith("#")) {
+            hex = hex.substring(1);
+        }
+        if (hex.length() != 6) {
+            plugin.getLogger().warning(hex + "は無効なカラーコードです．#RRGGBB形式で指定してください．");
+            return null;
+        }
+        try {
+            int r = Integer.valueOf(hex.substring(0, 2), 16);
+            int g = Integer.valueOf(hex.substring(2, 4), 16);
+            int b = Integer.valueOf(hex.substring(4, 6), 16);
+            return Color.fromRGB(r, g, b);
+        } catch (NumberFormatException e) {
+            plugin.getLogger().warning("カラーコードの解析に失敗しました: " + hex);
+            return null;
+        }
+    }
 
     public Map<String, List<String>> loadLores() {
         Map<String, List<String>> lores = new HashMap<>();

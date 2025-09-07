@@ -33,6 +33,35 @@ public class RecipeEditorManager {
         int currentStep = playerSteps.getOrDefault(player.getUniqueId(), 0);
         if (currentStep == 0) return;
 
+        RecipeBuilder builder = getBuilder(player);
+        Inventory currentGui = player.getOpenInventory().getTopInventory();
+
+        switch (currentStep) {
+            case 1:
+                List<ItemStack> requiredItems = new ArrayList<>();
+                for (int i = 0; i < 36; i++) {
+                    ItemStack item = currentGui.getItem(i);
+                    if (item != null && !item.getType().isAir()) {
+                        requiredItems.add(item.clone());
+                    }
+                }
+                builder.setRequiredItems(requiredItems);
+                break;
+            case 2:
+                builder.clearResultItems();
+                ItemStack resultItem = currentGui.getItem(13);
+                if (resultItem != null && !resultItem.getType().isAir()) {
+                    builder.setMainItem(resultItem.clone());
+                    builder.addResultItem(resultItem.clone());
+
+                    if (resultItem.hasItemMeta() && resultItem.getItemMeta().hasCustomModelData()) {
+                        builder.setModelData(resultItem.getItemMeta().getCustomModelData());
+                    }
+                }
+                break;
+        }
+
+
         playerSteps.put(player.getUniqueId(), currentStep + 1);
 
         switch (currentStep) {
@@ -40,10 +69,11 @@ public class RecipeEditorManager {
                 EditorGUI.openStep2_ResultItemGUI(player);
                 break;
             case 2:
-                EditorGUI.openStep3_ConfirmGUI(player, getBuilder(player));
+                EditorGUI.openStep3_ConfirmGUI(player, builder);
                 break;
         }
     }
+
     public void save(Player player) {
         setIntentionalClosure(player);
         RecipeBuilder builder = getBuilder(player);
@@ -71,18 +101,6 @@ public class RecipeEditorManager {
             itemsToReturn.addAll(builder.getResultItems());
         }
 
-        InventoryView openInventoryView = player.getOpenInventory();
-        if (openInventoryView.getTitle().startsWith("CraftGUI登録")) {
-            Inventory currentGui = openInventoryView.getTopInventory();
-            for (ItemStack item : currentGui.getContents()) {
-                if (item != null && !item.getType().isAir()) {
-                    if (item.getType() != Material.ARROW && item.getType() != Material.BARRIER && !item.getType().name().contains("STAINED_GLASS_PANE")) {
-                        itemsToReturn.add(item);
-                    }
-                }
-            }
-        }
-
         if (!itemsToReturn.isEmpty()) {
             Collection<ItemStack> leftoverItems = player.getInventory().addItem(itemsToReturn.toArray(new ItemStack[0])).values();
 
@@ -96,7 +114,9 @@ public class RecipeEditorManager {
 
         builders.remove(player.getUniqueId());
         playerSteps.remove(player.getUniqueId());
-        player.closeInventory();
+        if (player.getOpenInventory() != null) {
+            player.closeInventory();
+        }
     }
 
     public RecipeBuilder getBuilder(Player player) {

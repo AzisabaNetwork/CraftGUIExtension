@@ -44,6 +44,28 @@ public class CraftGuiCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        if (args.length == 1) {
+            try {
+                int page = Integer.parseInt(args[0]);
+                if (sender instanceof Player) {
+                    Player player = (Player) sender;
+
+                    if (page <= 0) {
+                        player.sendMessage(ChatColor.RED + "ページ番号は1以上で指定してください");
+                        return true;
+                    }
+
+                    guiManager.openCraftGUI(player, page);
+                    mapUtil.setPlayerPage(player.getUniqueId(), page);
+                    player.sendMessage(ChatColor.DARK_GREEN + "CraftGUI Extensionの" + page + "ページ目を開きました");
+                } else {
+                    sender.sendMessage(ChatColor.RED + "このコマンドはプレイヤーのみ実行できます");
+                }
+                return true;
+            } catch (NumberFormatException e) {
+            }
+        }
+
         if (args.length == 1 && args[0].equalsIgnoreCase("register")) {
             if (sender instanceof Player) {
                 Player player = (Player) sender;
@@ -75,13 +97,36 @@ public class CraftGuiCommand implements CommandExecutor, TabCompleter {
                         return true;
                     }
                     String url = plugin.getConfig().getString("ConfigURL");
+                    if (url == null || url.isEmpty()) {
+                        sender.sendMessage(ChatColor.RED + "エラー：config.ymlにConfigURLが設定されていません！");
+                        return true;
+                    }
                     plugin.reloadPluginConfigFromUrl(url);
                     sender.sendMessage(ChatColor.GREEN + "CraftGUI ExtensionのConfigを外部URLから再読み込みしました");
                     return true;
                 }
             }
+            if (args.length > 1 && args[1].equalsIgnoreCase("set")) {
+                if (args.length == 2) {
+                    if (!sender.hasPermission("craftguiextension.set")) {
+                        sender.sendMessage(ChatColor.RED + "権限がありません");
+                    } else {
+                        sender.sendMessage("/craftgui config set <URL>");
+                    }
+                    return true;
+                } else if (args.length == 3 && args[2].equalsIgnoreCase(args[2])) {
+                    if (!sender.hasPermission("craftguiextension.set")) {
+                        sender.sendMessage(ChatColor.RED + "権限がありません");
+                    } else {
+                        plugin.getConfig().set("ConfigURL", args[2]);
+                        plugin.saveConfig();
+                        sender.sendMessage(ChatColor.GREEN + "CraftGUIの外部参照リロードのURLを設定しました");
+                    }
+                    return true;
+                }
+            }
         }
-        sender.sendMessage(ChatColor.RED + args[0] + "は不明なコマンドです");
+        sender.sendMessage(ChatColor.RED + args[0] + "は不明なコマンドまたはページ番号です");
         return true;
     }
 
@@ -106,6 +151,12 @@ public class CraftGuiCommand implements CommandExecutor, TabCompleter {
         if (args.length == 3 && args[0].equalsIgnoreCase("config") && args[1].equalsIgnoreCase("reload")) {
             if (sender.hasPermission("craftguiextension.reload.external")) {
                 completions.add("--external");
+            }
+            return StringUtil.copyPartialMatches(args[2], completions, new ArrayList<>());
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("config") && args[1].equalsIgnoreCase("set")) {
+            if (sender.hasPermission("craftguiextension.set")) {
+                completions.add("<URL>");
             }
             return StringUtil.copyPartialMatches(args[2], completions, new ArrayList<>());
         }

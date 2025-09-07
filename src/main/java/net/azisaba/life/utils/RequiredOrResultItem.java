@@ -5,8 +5,8 @@ import org.bukkit.Material;
 public class RequiredOrResultItem {
 
     private final boolean isMythicItem;
-    private final String mmid; // MythicMobsのID
-    private final Material type; // BukkitのMaterial
+    private final String mmid;
+    private final Material type;
     private final String displayName;
     private final int amount;
 

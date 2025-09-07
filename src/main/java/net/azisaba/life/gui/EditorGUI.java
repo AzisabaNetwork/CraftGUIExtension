@@ -2,11 +2,13 @@ package net.azisaba.life.gui;
 
 import net.azisaba.life.editor.RecipeBuilder;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 import java.util.*;
 
@@ -51,6 +53,14 @@ public class EditorGUI {
 
         gui.setItem(0, builder.getMainItem());
         gui.setItem(1, createItem(Material.PAPER, "§bモデルデータ: §f" + builder.getModelData()));
+
+        ItemStack mainItem = builder.getMainItem();
+        if (mainItem != null && mainItem.getItemMeta() instanceof LeatherArmorMeta) {
+            LeatherArmorMeta leatherMeta = (LeatherArmorMeta) mainItem.getItemMeta();
+            Color color = leatherMeta.getColor();
+            String hexColor = String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
+            gui.setItem(2, createItem(Material.WATER_BUCKET, "§b皮装備の色: §f" + hexColor, "§7この色情報が保存されます"));
+        }
 
         ItemStack requiredHopper = createItem(Material.HOPPER, "§6必要アイテム一覧");
         ItemMeta requiredMeta = requiredHopper.getItemMeta();
@@ -98,8 +108,14 @@ public class EditorGUI {
             String displayName = item.hasItemMeta() && item.getItemMeta().hasDisplayName()
                     ? item.getItemMeta().getDisplayName()
                     : item.getType().name();
-
-            lore.add("§f- " + displayName + " §ex" + totalAmount);
+            String colorInfo = "";
+            ItemMeta meta = item.getItemMeta();
+            if (meta instanceof LeatherArmorMeta) {
+                Color color = ((LeatherArmorMeta) meta).getColor();
+                String hexColor = String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
+                colorInfo = " §7(" + hexColor + ")";
+            }
+            lore.add("§f- " + displayName + " §ex" + totalAmount + colorInfo);
         }
         lore.add("§7--------------------");
 

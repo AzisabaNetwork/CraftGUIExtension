@@ -2,10 +2,12 @@ package net.azisaba.life.editor;
 
 import net.azisaba.life.CraftGUIExtension;
 import net.azisaba.life.utils.MythicItemUtil;
+import org.bukkit.Color;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 import java.util.*;
 
@@ -26,7 +28,7 @@ public class ConfigSaver {
             return false;
         }
 
-        ItemStack mainDisplayItem = builder.getResultItems().get(0);
+        ItemStack mainDisplayItem = builder.getMainItem();
         String path = findNextAvailablePath(config);
 
         config.set(path + ".enabled", true);
@@ -46,6 +48,12 @@ public class ConfigSaver {
             config.set(path + ".model", meta.getCustomModelData());
         } else {
             config.set(path + ".model", 0);
+        }
+
+        if (meta instanceof LeatherArmorMeta) {
+            Color color = ((LeatherArmorMeta) meta).getColor();
+            String hexColor = String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
+            config.set(path + ".color", hexColor);
         }
 
         List<ItemStack> aggregatedRequired = aggregateItems(builder.getRequiredItems());
@@ -94,11 +102,17 @@ public class ConfigSaver {
         int targetPage = 1;
         int targetSlot = 0;
 
-        if (itemsSection == null) return "Items.page1";
+        if (itemsSection == null) {
+            return "Items.page1";
+        }
 
         Set<String> pageKeys = itemsSection.getKeys(false);
         if (!pageKeys.isEmpty()) {
-            targetPage = pageKeys.stream().map(key -> key.replace("page", "")).mapToInt(Integer::parseInt).max().orElse(1);
+            targetPage = pageKeys.stream()
+                    .map(key -> key.replace("page", ""))
+                    .filter(s -> s.matches("\\d+"))
+                    .mapToInt(Integer::parseInt)
+                    .max().orElse(1);
         }
 
         ConfigurationSection lastPageSection = itemsSection.getConfigurationSection("page" + targetPage);
@@ -131,8 +145,17 @@ public class ConfigSaver {
             serialized.put("type", item.getType().toString());
         }
 
-        serialized.put("displayName", hasDisplayName ? meta.getDisplayName() : item.getType().name());
+        if (hasDisplayName) {
+            serialized.put("displayName", meta.getDisplayName());
+        }
+
         serialized.put("amount", item.getAmount());
+
+        if (meta instanceof LeatherArmorMeta) {
+            Color color = ((LeatherArmorMeta) meta).getColor();
+            String hexColor = String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
+            serialized.put("color", hexColor);
+        }
 
         return serialized;
     }

@@ -10,8 +10,8 @@ public class RecipeBuilder {
     private ItemStack mainItem;
     private int modelData = 0;
 
-    private final List<ItemStack> requiredItems = new ArrayList<>();
-    private final List<ItemStack> resultItems = new ArrayList<>();
+    private List<ItemStack> requiredItems = new ArrayList<>(); // [変更] finalを削除
+    private List<ItemStack> resultItems = new ArrayList<>();
 
     public ItemStack getMainItem() {
         return mainItem;
@@ -33,7 +33,19 @@ public class RecipeBuilder {
         return requiredItems;
     }
 
+    public void setRequiredItems(List<ItemStack> requiredItems) {
+        this.requiredItems = requiredItems;
+    }
+
     public List<ItemStack> getResultItems() {
         return resultItems;
+    }
+
+    public void addResultItem(ItemStack resultItem) {
+        this.resultItems.add(resultItem);
+    }
+
+    public void clearResultItems() {
+        this.resultItems.clear();
     }
 }

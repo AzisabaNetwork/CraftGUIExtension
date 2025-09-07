@@ -13,6 +13,7 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,6 +37,10 @@ public class GuiUtil{
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName(itemUtil.getDisplayName());
 
+        if (meta instanceof LeatherArmorMeta && itemUtil.getColor() != null) {
+            LeatherArmorMeta leatherMeta = (LeatherArmorMeta) meta;
+            leatherMeta.setColor(itemUtil.getColor());
+        }
 
         if (itemUtil.getModel() > 0) meta.setCustomModelData(itemUtil.getModel());
         if (itemUtil.isEnchanted()) {
