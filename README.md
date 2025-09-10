@@ -35,6 +35,8 @@ Items:
       enchanted: false
       # カスタムモデルデータ番号
       model: 0
+      # 皮装備の時の色指定
+      color: #000000
       # 変換に必要なアイテム
       requiredItems:
           # バニラアイテムであればtype, MythicMobsアイテムであればmmidを設定してください
