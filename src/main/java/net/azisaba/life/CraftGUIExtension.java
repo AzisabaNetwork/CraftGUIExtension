@@ -34,7 +34,7 @@ public final class CraftGUIExtension extends JavaPlugin {
     @Override
     public void onEnable() {
         PluginManager pluginManager = getServer().getPluginManager();
-        List<String> requiredPlugins = Arrays.asList("ItemStash", "MMLuck");
+        List<String> requiredPlugins = Arrays.asList("ItemStash", "StorageBox", "MMLuck", "MythicMobs");
 
         for (String pluginName : requiredPlugins) {
             if (!pluginManager.isPluginEnabled(pluginName)) {
@@ -95,7 +95,7 @@ public final class CraftGUIExtension extends JavaPlugin {
             getLogger().info(ChatColor.RED+ "✘ " + ChatColor.RESET + "読み込み途中にエラーが発生したアイテム数: " + errorItems);
         }
         if (!errorDetails.isEmpty()) {
-            getLogger().warning("エラー詳細:");
+            getLogger().warning("エラー詳細：");
             for (String error : errorDetails) {
                 getLogger().warning("  - " + error);
             }

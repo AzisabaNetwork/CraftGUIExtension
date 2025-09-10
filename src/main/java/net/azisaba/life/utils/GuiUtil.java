@@ -14,22 +14,27 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
+import xyz.acrylicstyle.storageBox.utils.StorageBox;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Predicate;
 
-public class GuiUtil{
+public class GuiUtil {
 
     private final CraftGUIExtension plugin;
     private final ConfigUtil configUtil;
     private final Map<String, List<String>> loadedLores;
+    private final boolean isStorageBoxEnabled;
+    private final boolean isMMLuckEnabled;
+    private final boolean isMythicMobsEnabled;
 
     public GuiUtil(CraftGUIExtension plugin, ConfigUtil configUtil) {
         this.plugin = plugin;
         this.configUtil = configUtil;
         this.loadedLores = configUtil.loadLores();
+        this.isStorageBoxEnabled = Bukkit.getPluginManager().isPluginEnabled("StorageBox");
+        this.isMMLuckEnabled = Bukkit.getPluginManager().isPluginEnabled("MMLuck");
+        this.isMythicMobsEnabled = Bukkit.getPluginManager().isPluginEnabled("MythicMobs");
     }
 
     public ItemStack createStaticDisplayItem(ItemUtil itemUtil) {
@@ -53,12 +58,12 @@ public class GuiUtil{
         List<String> commonLore = loadedLores.get(itemUtil.getLoreKey());
         if (commonLore != null) lore.addAll(commonLore);
 
-        lore.add(ChatColor.GRAY + "変換に必要なアイテム:");
+        lore.add(ChatColor.GRAY + "変換に必要なアイテム：");
         for (RequiredOrResultItem required : itemUtil.getRequiredItems()) {
             lore.add(ChatColor.WHITE + required.getDisplayName() + ChatColor.GRAY + " x" + required.getAmount());
         }
 
-        lore.add(ChatColor.GRAY + "変換後のアイテム:");
+        lore.add(ChatColor.GRAY + "変換後のアイテム：");
         for (RequiredOrResultItem result : itemUtil.getResultItems()) {
             lore.add(ChatColor.AQUA + result.getDisplayName() + ChatColor.GRAY + " x" + result.getAmount());
         }
@@ -73,26 +78,32 @@ public class GuiUtil{
         if (meta == null) return;
 
         boolean canCraft = true;
+        int compressibleCount = Integer.MAX_VALUE;
+
         List<String> requirementLines = new ArrayList<>();
-        requirementLines.add(ChatColor.GRAY + "変換に必要なアイテム:");
+        requirementLines.add(ChatColor.GRAY + "変換に必要なアイテム：");
 
         for (RequiredOrResultItem required : itemUtil.getRequiredItems()) {
             int amountNeeded = required.getAmount();
             int playerAmount = required.isMythicItem() ? countMythic(player, required.getMmid(), required.getDisplayName()) : countVanilla(player, required.getType());
-
             if (playerAmount < amountNeeded) {
                 canCraft = false;
             }
 
+            if (amountNeeded > 0) {
+                compressibleCount = Math.min(compressibleCount, playerAmount / amountNeeded);
+            }
+
             String title = playerAmount >= amountNeeded ? ChatColor.GREEN + "✓ " + ChatColor.RESET : ChatColor.RED + "✘ " + ChatColor.RESET;
             String countMessage = getString(playerAmount, amountNeeded);
-
             requirementLines.add(title + required.getDisplayName() + ChatColor.GRAY + " x" + amountNeeded + countMessage);
         }
 
+        if (compressibleCount == Integer.MAX_VALUE) {
+            compressibleCount = 0;
+        }
+
         List<String> finalLore = new ArrayList<>();
-
-
 
         List<String> commonLore = loadedLores.get(itemUtil.getLoreKey());
         if (commonLore != null) {
@@ -108,17 +119,14 @@ public class GuiUtil{
         }
 
         finalLore.add("");
-        finalLore.addAll(requirementLines);
+        finalLore.add(ChatColor.GRAY + "圧縮可能回数: " + ChatColor.YELLOW + compressibleCount + "回");
         finalLore.add("");
-
-        finalLore.add(ChatColor.GRAY + "変換後のアイテム:");
-        for (RequiredOrResultItem result : itemUtil.getResultItems()) {
-            finalLore.add(ChatColor.AQUA + result.getDisplayName() + ChatColor.GRAY + " x" + result.getAmount());
-        }
+        finalLore.addAll(requirementLines);
 
         meta.setLore(finalLore);
         staticItem.setItemMeta(meta);
     }
+
     public void setNavigationButtons(Inventory gui, int currentPage) {
         if (currentPage > 1) {
             ItemStack prev = new ItemStack(Material.ARROW);
@@ -199,19 +207,34 @@ public class GuiUtil{
     }
 
     public int countVanilla(Player player, Material material) {
-        return countMatchingItems(player, stack -> {
-            ItemMeta meta = stack.getItemMeta();
-            boolean hasCustomName = meta != null && meta.hasDisplayName();
+        int amount = 0;
 
-            return stack.getType() == material && !hasCustomName;
+        amount += countMatchingItems(player, itemStack -> {
+            ItemMeta meta = itemStack.getItemMeta();
+            boolean hasCustomName = meta != null && meta.hasDisplayName();
+            return itemStack.getType() == material && !hasCustomName;
         });
+
+        return amount;
     }
 
     private int countMatchingItems(Player player, java.util.function.Predicate<ItemStack> predicate) {
         int count = 0;
-        for (ItemStack stack : player.getInventory()) {
-            if (stack != null && stack.getType() != Material.AIR && predicate.test(stack)) {
-                count += stack.getAmount();
+        for (ItemStack stack : player.getInventory().getContents()) {
+            if (stack == null || stack.getType() == Material.AIR) {
+                continue;
+            }
+
+            StorageBox storageBox = StorageBox.getStorageBox(stack);
+            if (storageBox != null) {
+                ItemStack componentItem = storageBox.getComponentItemStack();
+                if (componentItem != null && predicate.test(componentItem)) {
+                    count += (int) storageBox.getAmount();
+                }
+            } else {
+                if (predicate.test(stack)) {
+                    count += stack.getAmount();
+                }
             }
         }
         return count;
@@ -222,29 +245,7 @@ public class GuiUtil{
     }
 
     public void removeVanilla(Player player, Material material, int amount) {
-        int remaining = amount;
-        PlayerInventory inv = player.getInventory();
-
-        for (int i = 0; i < inv.getSize(); i++) {
-            ItemStack item = inv.getItem(i);
-            if (item == null || item.getType() == Material.AIR) continue;
-
-            ItemMeta meta = item.getItemMeta();
-            boolean hasCustomName = meta != null && meta.hasDisplayName();
-
-            if (item.getType() == material && !hasCustomName) {
-                int stackAmount = item.getAmount();
-                if (stackAmount <= remaining) {
-                    inv.setItem(i, null);
-                    remaining -= stackAmount;
-                } else {
-                    item.setAmount(stackAmount - remaining);
-                    remaining = 0;
-                }
-            }
-
-            if (remaining <= 0) break;
-        }
+        removeItemsInternal(player, false, material.name(), null, amount);
     }
 
     private void removeItemsInternal(Player player, boolean isMythic, String idOrMaterial, String displayNameFromConfig, int amount) {
@@ -261,6 +262,27 @@ public class GuiUtil{
                 continue;
             }
 
+            Predicate<ItemStack> predicate = createPredicate(isMythic, idOrMaterial, displayNameFromConfig);
+
+            StorageBox storageBox = StorageBox.getStorageBox(item);
+            if (storageBox != null) {
+                ItemStack componentItem = storageBox.getComponentItemStack();
+                if (componentItem == null) {
+                    continue;
+                }
+
+                if (predicate.test(componentItem)) {
+                    long boxAmount = storageBox.getAmount();
+                    long removeAmount = Math.min(boxAmount, remaining);
+
+                    storageBox.setAmount(boxAmount - removeAmount);
+                    remaining -= (int) removeAmount;
+
+                    inv.setItem(i, storageBox.getItemStack());
+                }
+                continue;
+            }
+
             String mmid = null;
             String displayName = null;
             ItemMeta meta = item.getItemMeta();
@@ -273,21 +295,20 @@ public class GuiUtil{
             }
 
             boolean matched = false;
-
             if (isMythic) {
-                if (idOrMaterial != null && !idOrMaterial.isEmpty()) {
-                    if (idOrMaterial.equalsIgnoreCase(mmid)) {
+                if (idOrMaterial != null && !idOrMaterial.isEmpty() && idOrMaterial.equalsIgnoreCase(mmid)) {
+                    matched = true;
+                }
+                if (!matched && displayNameFromConfig != null && !displayNameFromConfig.isEmpty() && displayName != null) {
+                    String configDisplayNameProcessed = ChatColor.translateAlternateColorCodes('&', displayNameFromConfig);
+                    if (configDisplayNameProcessed.equals(displayName)) {
                         matched = true;
                     }
                 }
-
-                if (!matched && displayNameFromConfig != null && !displayNameFromConfig.isEmpty()) {
-                    if (displayName != null) {
-                        String configDisplayNameProcessed = ChatColor.translateAlternateColorCodes('&', displayNameFromConfig);
-                        if (configDisplayNameProcessed.equals(displayName)) {
-                            matched = true;
-                        }
-                    }
+            } else {
+                boolean hasCustomName = meta != null && meta.hasDisplayName();
+                if (item.getType().name().equalsIgnoreCase(idOrMaterial) && !hasCustomName) {
+                    matched = true;
                 }
             }
 
@@ -297,14 +318,49 @@ public class GuiUtil{
                     inv.setItem(i, null);
                     remaining -= stackAmount;
                 } else {
-                    item.setAmount(stackAmount - remaining);
+                    ItemStack newStack = item.clone();
+                    newStack.setAmount(stackAmount - remaining);
+                    inv.setItem(i, newStack);
                     remaining = 0;
                 }
             }
         }
     }
 
+    private Predicate<ItemStack> createPredicate(boolean isMythic, String idOrMaterial, String displayNameFromConfig) {
+        return stack -> {
+            if (isMythic) {
+                String mmid = MythicItemUtil.getMythicType(stack);
+                String displayName = null;
+                ItemMeta meta = stack.getItemMeta();
+                if (meta != null && meta.hasDisplayName()) {
+                    displayName = meta.getDisplayName();
+                }
+                if (idOrMaterial != null && !idOrMaterial.isEmpty() && idOrMaterial.equalsIgnoreCase(mmid)) {
+                    return true;
+                }
+                if (displayNameFromConfig != null && !displayNameFromConfig.isEmpty() && displayName != null) {
+                    String configDisplayNameProcessed = ChatColor.translateAlternateColorCodes('&', displayNameFromConfig);
+                    if (configDisplayNameProcessed.equals(displayName)) {
+                        return true;
+                    }
+                }
+            } else {
+                ItemMeta meta = stack.getItemMeta();
+                boolean hasCustomName = meta != null && meta.hasDisplayName();
+                if (stack.getType().name().equalsIgnoreCase(idOrMaterial) && !hasCustomName) {
+                    return true;
+                }
+            }
+            return false;
+        };
+    }
+
     public void giveMythicItem(Player player, String mmid, int amount) {
+        if (!isMMLuckEnabled) {
+            player.sendMessage(ChatColor.RED + "エラー：MMLuckプラグインが見つからないため，アイテムを付与できません．");
+            return;
+        }
         String command = "mlg " + player.getName() + " " + mmid + " " + amount + " 1";
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
     }
@@ -338,7 +394,7 @@ public class GuiUtil{
                 }
             } else {
                 if (result.getType() == null) {
-                    player.sendMessage(ChatColor.RED + "エラー: アイテムIDが設定されていないバニラアイテムです．");
+                    player.sendMessage(ChatColor.RED + "エラー：アイテムIDが設定されていないバニラアイテムです．");
                     continue;
                 }
                 giveVanilla(player, result.getType(), displayName, totalAmount);

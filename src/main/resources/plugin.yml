@@ -3,9 +3,12 @@ version: '${project.version}'
 main: net.azisaba.life.CraftGUIExtension
 api-version: '1.15'
 authors: [ albardoo02 ]
+softdepend:
+  - MMLuck
 depend:
   - ItemStash
-  - MMLuck
+  - StorageBox
+
 description: Configでアイテムを設定できるCraftGUI
 website: https://github.com/albardoo02/CraftGUIExtension
 commands:
