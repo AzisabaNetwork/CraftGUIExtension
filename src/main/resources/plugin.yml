@@ -21,7 +21,5 @@ commands:
       - /craft
 
 permissions:
-  craftguiextension.reload:
-    default: op
-  craftguiextension.register:
+  craftguiextension.command.admin:
     default: op

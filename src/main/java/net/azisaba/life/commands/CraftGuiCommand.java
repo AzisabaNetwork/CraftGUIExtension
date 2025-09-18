@@ -69,7 +69,7 @@ public class CraftGuiCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1 && args[0].equalsIgnoreCase("register")) {
             if (sender instanceof Player) {
                 Player player = (Player) sender;
-                if (player.hasPermission("craftguiextension.register")) {
+                if (player.hasPermission("craftguiextension.command.admin")) {
                     editorManager.start(player);
                 } else {
                     player.sendMessage(ChatColor.RED + "権限がありません");
@@ -83,7 +83,7 @@ public class CraftGuiCommand implements CommandExecutor, TabCompleter {
         if (args.length > 0 && args[0].equalsIgnoreCase("config")) {
             if (args.length > 1 && args[1].equalsIgnoreCase("reload")) {
                 if (args.length == 2) {
-                    if (!sender.hasPermission("craftguiextension.reload")) {
+                    if (!sender.hasPermission("craftguiextension.command.admin")) {
                         sender.sendMessage(ChatColor.RED + "権限がありません");
                         return true;
                     }
@@ -92,7 +92,7 @@ public class CraftGuiCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 else if (args.length == 3 && args[2].equalsIgnoreCase("--external")) {
-                    if (!sender.hasPermission("craftguiextension.reload.external")) {
+                    if (!sender.hasPermission("craftguiextension.command.admin")) {
                         sender.sendMessage(ChatColor.RED + "権限がありません");
                         return true;
                     }
@@ -108,14 +108,14 @@ public class CraftGuiCommand implements CommandExecutor, TabCompleter {
             }
             if (args.length > 1 && args[1].equalsIgnoreCase("set")) {
                 if (args.length == 2) {
-                    if (!sender.hasPermission("craftguiextension.set")) {
+                    if (!sender.hasPermission("craftguiextension.command.admin")) {
                         sender.sendMessage(ChatColor.RED + "権限がありません");
                     } else {
                         sender.sendMessage("/craftgui config set <URL>");
                     }
                     return true;
                 } else if (args.length == 3 && args[2].equalsIgnoreCase(args[2])) {
-                    if (!sender.hasPermission("craftguiextension.set")) {
+                    if (!sender.hasPermission("craftguiextension.command.admin")) {
                         sender.sendMessage(ChatColor.RED + "権限がありません");
                     } else {
                         plugin.getConfig().set("ConfigURL", args[2]);
@@ -134,28 +134,28 @@ public class CraftGuiCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> completions = new ArrayList<>();
         if (args.length == 1) {
-            if (sender.hasPermission("craftguiextension.reload") || sender.hasPermission("craftguiextension.reload.external")) {
+            if (sender.hasPermission("craftguiextension.command.admin")) {
                 completions.add("config");
             }
-            if (sender.hasPermission("craftguiextension.register")) {
+            if (sender.hasPermission("craftguiextension.command.admin")) {
                 completions.add("register");
             }
             return StringUtil.copyPartialMatches(args[0], completions, new ArrayList<>());
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("config")) {
-            if (sender.hasPermission("craftguiextension.reload") || sender.hasPermission("craftguiextension.reload.external")) {
+            if (sender.hasPermission("craftguiextension.command.admin")) {
                 completions.add("reload");
             }
             return StringUtil.copyPartialMatches(args[1], completions, new ArrayList<>());
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("config") && args[1].equalsIgnoreCase("reload")) {
-            if (sender.hasPermission("craftguiextension.reload.external")) {
+            if (sender.hasPermission("craftguiextension.command.admin")) {
                 completions.add("--external");
             }
             return StringUtil.copyPartialMatches(args[2], completions, new ArrayList<>());
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("config") && args[1].equalsIgnoreCase("set")) {
-            if (sender.hasPermission("craftguiextension.set")) {
+            if (sender.hasPermission("craftguiextension.command.admin")) {
                 completions.add("<URL>");
             }
             return StringUtil.copyPartialMatches(args[2], completions, new ArrayList<>());

@@ -60,12 +60,10 @@ public class GuiUtil {
 
         lore.add(ChatColor.GRAY + "変換に必要なアイテム：");
         for (RequiredOrResultItem required : itemUtil.getRequiredItems()) {
-            lore.add(ChatColor.WHITE + required.getDisplayName() + ChatColor.GRAY + " x" + required.getAmount());
-        }
-
-        lore.add(ChatColor.GRAY + "変換後のアイテム：");
-        for (RequiredOrResultItem result : itemUtil.getResultItems()) {
-            lore.add(ChatColor.AQUA + result.getDisplayName() + ChatColor.GRAY + " x" + result.getAmount());
+            String displayName = required.isMythicItem()
+                    ? MythicItemUtil.getDisplayNameFromMMID(required.getMmid())
+                    : required.getDisplayName();
+            lore.add(ChatColor.WHITE + displayName + ChatColor.GRAY + " x" + required.getAmount());
         }
 
         meta.setLore(lore);
@@ -94,9 +92,16 @@ public class GuiUtil {
                 compressibleCount = Math.min(compressibleCount, playerAmount / amountNeeded);
             }
 
-            String title = playerAmount >= amountNeeded ? ChatColor.GREEN + "✓ " + ChatColor.RESET : ChatColor.RED + "✘ " + ChatColor.RESET;
+            String title = playerAmount >= amountNeeded
+                    ? ChatColor.GREEN + "✓ " + ChatColor.RESET
+                    : ChatColor.RED + "✘ " + ChatColor.RESET;
             String countMessage = getString(playerAmount, amountNeeded);
-            requirementLines.add(title + required.getDisplayName() + ChatColor.GRAY + " x" + amountNeeded + countMessage);
+
+            String displayName = required.isMythicItem()
+                    ? MythicItemUtil.getDisplayNameFromMMID(required.getMmid())
+                    : required.getDisplayName();
+
+            requirementLines.add(title + displayName + ChatColor.GRAY + " x" + amountNeeded + countMessage);
         }
 
         if (compressibleCount == Integer.MAX_VALUE) {
