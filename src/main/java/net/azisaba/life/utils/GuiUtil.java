@@ -24,17 +24,11 @@ public class GuiUtil {
     private final CraftGUIExtension plugin;
     private final ConfigUtil configUtil;
     private final Map<String, List<String>> loadedLores;
-    private final boolean isStorageBoxEnabled;
-    private final boolean isMMLuckEnabled;
-    private final boolean isMythicMobsEnabled;
 
     public GuiUtil(CraftGUIExtension plugin, ConfigUtil configUtil) {
         this.plugin = plugin;
         this.configUtil = configUtil;
         this.loadedLores = configUtil.loadLores();
-        this.isStorageBoxEnabled = Bukkit.getPluginManager().isPluginEnabled("StorageBox");
-        this.isMMLuckEnabled = Bukkit.getPluginManager().isPluginEnabled("MMLuck");
-        this.isMythicMobsEnabled = Bukkit.getPluginManager().isPluginEnabled("MythicMobs");
     }
 
     public ItemStack createStaticDisplayItem(ItemUtil itemUtil) {
@@ -43,11 +37,12 @@ public class GuiUtil {
         meta.setDisplayName(itemUtil.getDisplayName());
 
         if (meta instanceof LeatherArmorMeta && itemUtil.getColor() != null) {
-            LeatherArmorMeta leatherMeta = (LeatherArmorMeta) meta;
-            leatherMeta.setColor(itemUtil.getColor());
+            ((LeatherArmorMeta) meta).setColor(itemUtil.getColor());
         }
 
-        if (itemUtil.getModel() > 0) meta.setCustomModelData(itemUtil.getModel());
+        if (itemUtil.getModel() > 0) {
+            meta.setCustomModelData(itemUtil.getModel());
+        }
         if (itemUtil.isEnchanted()) {
             meta.addEnchant(Enchantment.DURABILITY, 1, true);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -55,15 +50,16 @@ public class GuiUtil {
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
 
         List<String> lore = new ArrayList<>();
+
         List<String> commonLore = loadedLores.get(itemUtil.getLoreKey());
-        if (commonLore != null) lore.addAll(commonLore);
+        if (commonLore != null) {
+            lore.addAll(commonLore);
+        }
 
         lore.add(ChatColor.GRAY + "変換に必要なアイテム：");
         for (RequiredOrResultItem required : itemUtil.getRequiredItems()) {
-            String displayName = required.isMythicItem()
-                    ? MythicItemUtil.getDisplayNameFromMMID(required.getMmid())
-                    : required.getDisplayName();
-            lore.add(ChatColor.WHITE + displayName + ChatColor.GRAY + " x" + required.getAmount());
+            String displayName = MythicItemUtil.resolveDisplayName(required);
+            lore.add(String.format("%s%s%s x%d", ChatColor.WHITE, displayName, ChatColor.GRAY, required.getAmount()));
         }
 
         meta.setLore(lore);
@@ -362,10 +358,6 @@ public class GuiUtil {
     }
 
     public void giveMythicItem(Player player, String mmid, int amount) {
-        if (!isMMLuckEnabled) {
-            player.sendMessage(ChatColor.RED + "エラー：MMLuckプラグインが見つからないため，アイテムを付与できません．");
-            return;
-        }
         String command = "mlg " + player.getName() + " " + mmid + " " + amount + " 1";
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
     }
@@ -374,11 +366,8 @@ public class GuiUtil {
         giveMythicItem(player, mmid, amount);
     }
 
-    public void giveVanilla(Player player, Material material, String displayName, int amount) {
+    public void giveVanilla(Player player, Material material, int amount) {
         ItemStack item = new ItemStack(material, amount);
-        if (displayName != null && !displayName.isEmpty()) {
-            item.getItemMeta().setDisplayName(ChatColor.translateAlternateColorCodes('&', displayName));
-        }
         if (Bukkit.getPluginManager().isPluginEnabled("ItemStash")) {
             ItemStash.getInstance().addItemToStash(player.getUniqueId(), new ItemStack(material, amount));
         } else {
@@ -402,7 +391,7 @@ public class GuiUtil {
                     player.sendMessage(ChatColor.RED + "エラー：アイテムIDが設定されていないバニラアイテムです．");
                     continue;
                 }
-                giveVanilla(player, result.getType(), displayName, totalAmount);
+                giveVanilla(player, result.getType(), totalAmount);
                 player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7[&aCraftGUI&7] &b" + displayName + " &7(×" + totalAmount + ")&aを付与しました"));
                 player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 2.0F, 1.0F);
             }
